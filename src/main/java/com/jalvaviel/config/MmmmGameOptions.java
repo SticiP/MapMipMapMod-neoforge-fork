@@ -3,8 +3,7 @@ package com.jalvaviel.config;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,6 +12,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+
+import net.neoforged.fml.loading.FMLPaths;
 
 import static com.jalvaviel.MapMipMapModClient.*;
 
@@ -72,7 +73,8 @@ public class MmmmGameOptions {
      * @return the config file path.
      */
     private static @NotNull Path getConfigPath() {
-        return FabricLoader.getInstance().getConfigDir().resolve(DEFAULT_FILE_NAME);
+        // Am înlocuit FabricLoader cu FMLPaths de la NeoForge
+        return FMLPaths.CONFIGDIR.get().resolve(DEFAULT_FILE_NAME);
     }
 
     /**
@@ -102,7 +104,6 @@ public class MmmmGameOptions {
      * @param text The JSON string provided by GSON.
      * @param path The path to save it to.
      * @throws IOException If the config is read-only.
-     * @see net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions
      */
     private static void writeTextRobustly(String text, @NotNull Path path) throws IOException {
         Path tempPath = path.resolveSibling(path.getFileName() + ".tmp");
@@ -135,7 +136,7 @@ public class MmmmGameOptions {
 
         // Mipmap levels with defaults
         public int getMapmipmapLevels() {
-            return OUTDATED_DRIVER ? 0 : (this.mapmipmapLevels <= -1 ? MinecraftClient.getInstance().options.getMipmapLevels().getValue() : this.mapmipmapLevels);
+            return OUTDATED_DRIVER ? 0 : (this.mapmipmapLevels <= -1 ? Minecraft.getInstance().options.mipmapLevels().get() : this.mapmipmapLevels);
         }
 
         // Mipmap levels for "auto" display on sodium MmmmGameOptionsPages

@@ -1,92 +1,91 @@
 package com.jalvaviel.config;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.option.GameOptionsScreen;
-import net.minecraft.client.option.GameOptions;
-import net.minecraft.client.option.SimpleOption;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.OptionInstance;
+import net.minecraft.client.Options;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.options.OptionsSubScreen;
+import net.minecraft.network.chat.Component;
 
 import static com.jalvaviel.MapMipMapModClient.MAP_SIZE;
 
 /** <h1>MmmmOptionScreen class</h1>
- * The option screen for MapMipMapMod without sodium. It gets called when the MapMipMapMod button is pressed in the vanilla's VideoOptionsScreen
- * @see com.jalvaviel.mixin.client.VideoOptionsScreenMixin
+ * Ecranul de optiuni pentru MapMipMapMod fara Sodium.
  */
-public class MmmmOptionScreen extends GameOptionsScreen {
+public class MmmmOptionScreen extends OptionsSubScreen {
 
     private static final MmmmOptionsStorage mmmmOpts = new MmmmOptionsStorage();
 
     /**
      * The option screen constructor.
-     * @param parent the parent screen (previous screen).
-     * @param gameOptions the gameOptions with most of the vanilla config. (I don't know why it's mandatory for any GameOptionsScreen children when addOptions exist).
+     * @param parent The parent screen.
+     * @param gameOptions The game options.
      */
-    public MmmmOptionScreen(Screen parent, GameOptions gameOptions) {
-        super(parent, gameOptions, Text.translatable("tab.mapmipmapmod.general"));
+    public MmmmOptionScreen(Screen parent, Options gameOptions) {
+        super(parent, gameOptions, Component.translatable("tab.mapmipmapmod.general"));
     }
 
     /**
-     * Adds the options for MapMipMapMod using vanilla's SimpleOption builders.
-     * @see SimpleOption
+     * Adauga optiunile folosind constructorii OptionInstance (echivalentul SimpleOption).
      */
     @Override
     protected void addOptions() {
         // Map Mipmap Levels Option
-        SimpleOption<Integer> mapmipmapLevels = new SimpleOption<>(
+        OptionInstance<Integer> mapmipmapLevels = new OptionInstance<>(
                 "entry.mapmipmapmod.map_mipmap_levels",
-                SimpleOption.constantTooltip(Text.translatable("tooltip.mapmipmapmod.map_mipmap_levels")),
+                OptionInstance.cachedConstantTooltip(Component.translatable("tooltip.mapmipmapmod.map_mipmap_levels")),
                 (optionText, value) -> {
-                    Text textValue = value <= -1 ?
-                        Text.translatable("entry.mapmipmapmod.auto") :
-                        Text.literal(Integer.toString(value));
-                    return Text.translatable("entry.mapmipmapmod.map_mipmap_levels").append(": "+textValue.getString());
+                    Component textValue = value <= -1 ?
+                            Component.translatable("entry.mapmipmapmod.auto") :
+                            Component.literal(Integer.toString(value));
+                    return Component.translatable("entry.mapmipmapmod.map_mipmap_levels").append(Component.literal(": ")).append(textValue);
                 },
-                new SimpleOption.ValidatingIntSliderCallbacks(-1, 8, false),
+                new OptionInstance.IntRange(-1, 8),
                 mmmmOpts.getData().generalOptions.getLiteralMapmipmapLevels(),
                 (value) -> {
                     mmmmOpts.getData().generalOptions.setMapmipmapLevels(value);
-                    MinecraftClient.getInstance().gameRenderer.getMapRenderer().clearStateTextures();
+                    Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
                 });
 
         // Atlas Size Option
-        SimpleOption<Integer> atlasSize = new SimpleOption<>(
+        OptionInstance<Integer> atlasSize = new OptionInstance<>(
                 "entry.mapmipmapmod.atlas_size",
-                SimpleOption.constantTooltip(Text.translatable("tooltip.mapmipmapmod.atlas_size")),
+                OptionInstance.cachedConstantTooltip(Component.translatable("tooltip.mapmipmapmod.atlas_size")),
                 (optionText, value) -> {
-                    Text textValue = value <= 0 ?
-                        Text.translatable("entry.mapmipmapmod.auto") :
-                        Text.literal(value + "x" + value + " (" + (value * MAP_SIZE) + "x" + (value * MAP_SIZE) + "px)");
-                    return Text.translatable("entry.mapmipmapmod.atlas_size").append(": "+textValue.getString());
+                    Component textValue = value <= 0 ?
+                            Component.translatable("entry.mapmipmapmod.auto") :
+                            Component.literal(value + "x" + value + " (" + (value * MAP_SIZE) + "x" + (value * MAP_SIZE) + "px)");
+                    return Component.translatable("entry.mapmipmapmod.atlas_size").append(Component.literal(": ")).append(textValue);
                 },
-                new SimpleOption.ValidatingIntSliderCallbacks(0, 32, false),
+                new OptionInstance.IntRange(0, 32),
                 mmmmOpts.getData().generalOptions.getLiteralAtlasSize(),
                 (value) -> {
                     mmmmOpts.getData().generalOptions.setAtlasSize(value);
-                    MinecraftClient.getInstance().gameRenderer.getMapRenderer().clearStateTextures();
+                    Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
                 });
 
         // Locked Map Updates Option
-        SimpleOption<Boolean> lockedMapUpdates = SimpleOption.ofBoolean(
+        OptionInstance<Boolean> lockedMapUpdates = OptionInstance.createBoolean(
                 "entry.mapmipmapmod.locked_map_updates",
-                SimpleOption.constantTooltip(Text.translatable("tooltip.mapmipmapmod.locked_map_updates")),
+                OptionInstance.cachedConstantTooltip(Component.translatable("tooltip.mapmipmapmod.locked_map_updates")),
                 mmmmOpts.getData().generalOptions.isLockedMapUpdates(),
                 (value) -> mmmmOpts.getData().generalOptions.setLockedMapUpdates(value));
 
-        // Add all options to the screen body with full width
-        this.body.addSingleOptionEntry(mapmipmapLevels);
-        this.body.addSingleOptionEntry(atlasSize);
-        this.body.addSingleOptionEntry(lockedMapUpdates);
+        // In NeoForge/MojMap, lista de butoane se numeste "list" iar butoanele mari (full width) folosesc addBig
+        if (this.list != null) {
+            this.list.addBig(mapmipmapLevels);
+            this.list.addBig(atlasSize);
+            this.list.addBig(lockedMapUpdates);
+        }
     }
 
     /**
-     * Callback called when the screen is closed.
-     * It saves the running config to a file and refreshes all the maps rendered by the MapTextureManager.
+     * In MojMap, metoda close() se numeste onClose() si este apelata la apasarea butonului ESC sau Done.
      */
     @Override
-    public void close() {
+    public void onClose() {
         mmmmOpts.save();
-        MinecraftClient.getInstance().gameRenderer.getMapRenderer().clearStateTextures();
-        super.close();
+        Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
+        super.onClose();
     }
 }
