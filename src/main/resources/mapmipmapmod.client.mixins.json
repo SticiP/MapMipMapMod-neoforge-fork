@@ -4,9 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "MapRendererMixin",
-    "MapTextureManagerMixin",
-    "MinecraftClientAtlasSizeMixin",
-    "VideoOptionsScreenMixin"
+    "MapTextureManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
