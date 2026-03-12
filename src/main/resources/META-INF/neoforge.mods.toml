@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[21,)"
+license="CC0-1.0"
+
+[[mods]]
+modId="mapmipmapmod"
+version="1.2.0"
+displayName="MapMipMapMod"
+authors="Jalvaviel, (Portat de Pavel)"
+description="A Minecraft Mod that fixes the mipmaps for map textures."
+logoFile="icon.png"
+
+[[dependencies.mapmipmapmod]]
+modId="neoforge"
+type="required"
+versionRange="[21.1,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.mapmipmapmod]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.21.2)"
+ordering="NONE"
+side="CLIENT"
