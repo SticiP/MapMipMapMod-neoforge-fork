@@ -22,7 +22,7 @@ public abstract class DynamicTextureMixin {
     @Inject(method = "upload", at = @At("HEAD"), cancellable = true)
     private void generateMipMapsOnUpload(CallbackInfo ci) {
 
-        int mipmapValue = -1;
+        int mipmapValue;
 
         try {
             mipmapValue = MapMipMapModClient.options().generalOptions.getMapmipmapLevels();
