@@ -13,6 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -23,6 +24,9 @@ public abstract class MapRendererMixin {
 
     @Shadow
     private MapItemSavedData data;
+
+    @Unique
+    private boolean mmm$isInitialized = false;
 
     /**
      * Redirects the default Map RenderType creation.
@@ -37,10 +41,15 @@ public abstract class MapRendererMixin {
 
         int mipmapValue = MapMipMapModClient.options().generalOptions.getMapmipmapLevels();
 
+        MapMipMapModClient.LOG.info("[MapMipMap] redirectMapRenderType called for: {}. MipMap Level: {}, Outdated: {}",
+                location, mipmapValue, MapMipMapModClient.OUTDATED_DRIVER);
+
         // Fallback to vanilla rendering if MipMap is disabled or drivers are unsupported
         if (mipmapValue <= 0 || MapMipMapModClient.OUTDATED_DRIVER) {
             return RenderType.text(location);
         }
+
+        MapMipMapModClient.LOG.info("[MapMipMap] >>> Applying custom Bilinear RenderType for map: {}", location);
 
         // Create and return the custom RenderType with texture blurring (blur = true)
         return RenderType.create(
@@ -63,18 +72,34 @@ public abstract class MapRendererMixin {
 
     @Inject(method = "updateTexture", at = @At("HEAD"), cancellable = true)
     private void onUpdateTexture(CallbackInfo ci) {
+        if (!this.mmm$isInitialized) {
+            return;
+        }
+
         MmmmGameOptions.MapUpdateMode mode = MapMipMapModClient.options().generalOptions.getMapUpdates();
 
         if (mode == MmmmGameOptions.MapUpdateMode.ALL) {
             return;
-        } else if (mode == MmmmGameOptions.MapUpdateMode.NONE) {
+        }
+
+        if (mode == MmmmGameOptions.MapUpdateMode.NONE) {
             ci.cancel();
             return;
-        } else if (mode == MmmmGameOptions.MapUpdateMode.ONLY_UNLOCKED) {
+        }
+
+        if (mode == MmmmGameOptions.MapUpdateMode.ONLY_UNLOCKED) {
             if (this.data != null && this.data.locked) {
                 ci.cancel();
             }
         }
+    }
+
+    /**
+     * After a successful upload, we mark the map as initialized.
+     */
+    @Inject(method = "updateTexture", at = @At("RETURN"))
+    private void afterUpdateTexture(CallbackInfo ci) {
+        this.mmm$isInitialized = true;
     }
 
     /**
@@ -87,7 +112,7 @@ public abstract class MapRendererMixin {
         if (biasLevel > 0) {
             poseStack.pushPose();
             // Move the map slightly towards the camera (-Z)
-            float offset = biasLevel * 0.001f;
+            float offset = biasLevel * 1f;
             poseStack.translate(0.0f, 0.0f, -offset);
         }
     }
