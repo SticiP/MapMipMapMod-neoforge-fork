@@ -37,6 +37,9 @@ public abstract class MapTextureManagerMixin {
 
                     // 4. IMPORTANT: Anulam apelul original de upload() ca sa nu se faca de doua ori
                     ci.cancel();
+
+                    // În interiorul metodei preUploadMipmap:
+                    MapMipMapModClient.LOG.debug("Se genereaza mipmap la nivelul " + mipmapValue + " pentru o harta.");
                 }
             }
         }
