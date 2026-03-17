@@ -2,11 +2,12 @@ package com.jalvaviel.compat.sodium;
 
 import com.google.common.collect.ImmutableList;
 import com.jalvaviel.MapMipMapModClient;
+import com.jalvaviel.config.MmmmGameOptions;
 import net.caffeinemc.mods.sodium.client.gui.options.OptionGroup;
 import net.caffeinemc.mods.sodium.client.gui.options.OptionImpl;
 import net.caffeinemc.mods.sodium.client.gui.options.OptionPage;
+import net.caffeinemc.mods.sodium.client.gui.options.control.ControlValueFormatter;
 import net.caffeinemc.mods.sodium.client.gui.options.control.SliderControl;
-import net.caffeinemc.mods.sodium.client.gui.options.control.TickBoxControl;
 import net.caffeinemc.mods.sodium.client.gui.options.storage.SodiumOptionsStorage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -41,31 +42,44 @@ public class MapMipMapSodiumPage {
                             MapMipMapModClient.LOG.info("Map MipMap level changed to: {}", value);
 
                             // Safely reset map data to apply changes instantly
-                            if (Minecraft.getInstance().gameRenderer != null && Minecraft.getInstance().gameRenderer.getMapRenderer() != null) {
-                                Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
-                            }
+                            Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
                         },
                         (options) -> MapMipMapModClient.options().generalOptions.getLiteralMapmipmapLevels()
                 )
                 .build();
 
         // 2. Locked Map Updates Option (Boolean Toggle)
-        var lockedMapUpdatesOption = OptionImpl.createBuilder(Boolean.class, DUMMY_STORAGE)
-                .setName(Component.translatable("entry.mapmipmapmod.locked_map_updates"))
-                .setTooltip(Component.translatable("tooltip.mapmipmapmod.locked_map_updates"))
-                .setControl(TickBoxControl::new)
+        var mapUpdatesOption = OptionImpl.createBuilder(MmmmGameOptions.MapUpdateMode.class, DUMMY_STORAGE)
+                .setName(Component.translatable("entry.mapmipmapmod.map_updates"))
+                .setTooltip(Component.translatable("tooltip.mapmipmapmod.map_updates_only_unlocked")) // Tooltip generic
+                .setControl(option -> new net.caffeinemc.mods.sodium.client.gui.options.control.CyclingControl<>(
+                        option,
+                        MmmmGameOptions.MapUpdateMode.class,
+                        new Component[] {
+                                Component.translatable("entry.mapmipmapmod.map_updates_all"),
+                                Component.translatable("entry.mapmipmapmod.map_updates_only_unlocked"),
+                                Component.translatable("entry.mapmipmapmod.map_updates_none")
+                        }))
                 .setBinding(
-                        (options, value) -> {
-                            MapMipMapModClient.options().generalOptions.setLockedMapUpdates(value);
-                            MapMipMapModClient.LOG.info("Locked map updates set to: {}", value);
-                        },
-                        (options) -> MapMipMapModClient.options().generalOptions.isLockedMapUpdates()
+                        (options, value) -> MapMipMapModClient.options().generalOptions.setMapUpdates(value),
+                        (options) -> MapMipMapModClient.options().generalOptions.getMapUpdates()
+                )
+                .build();
+
+        var depthBiasOption = OptionImpl.createBuilder(Integer.class, DUMMY_STORAGE)
+                .setName(Component.translatable("entry.mapmipmapmod.depth_bias"))
+                .setTooltip(Component.translatable("tooltip.mapmipmapmod.depth_bias"))
+                .setControl(option -> new SliderControl(option, 0, 8, 1, ControlValueFormatter.number()))
+                .setBinding(
+                        (options, value) -> MapMipMapModClient.options().generalOptions.setDepthBias(value),
+                        (options) -> MapMipMapModClient.options().generalOptions.getDepthBias()
                 )
                 .build();
 
         var group = OptionGroup.createBuilder()
                 .add(mipmapOption)
-                .add(lockedMapUpdatesOption)
+                .add(mapUpdatesOption)
+                .add(depthBiasOption)
                 .build();
 
         return new OptionPage(Component.translatable("tab.mapmipmapmod.general"), ImmutableList.of(group));

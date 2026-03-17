@@ -40,20 +40,41 @@ public class MmmmOptionScreen extends OptionsSubScreen {
                     Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
                 });
 
-        // Locked Map Updates Setting (Boolean Toggle)
-        OptionInstance<Boolean> lockedMapUpdates = OptionInstance.createBoolean(
-                "entry.mapmipmapmod.locked_map_updates",
-                OptionInstance.cachedConstantTooltip(Component.translatable("tooltip.mapmipmapmod.locked_map_updates")),
-                OPTIONS_STORAGE.getData().generalOptions.isLockedMapUpdates(),
-                (value) -> {
-                    OPTIONS_STORAGE.getData().generalOptions.setLockedMapUpdates(value);
-                    MapMipMapModClient.LOG.info("Locked map updates set to: " + value);
-                });
+        OptionInstance<MmmmGameOptions.MapUpdateMode> mapUpdates = new OptionInstance<>(
+                "entry.mapmipmapmod.map_updates",
+                OptionInstance.noTooltip(),
+                (optionText, value) -> switch (value) {
+                    case ALL -> Component.translatable("entry.mapmipmapmod.map_updates_all");
+                    case ONLY_UNLOCKED -> Component.translatable("entry.mapmipmapmod.map_updates_only_unlocked");
+                    case NONE -> Component.translatable("entry.mapmipmapmod.map_updates_none");
+                },
+                new OptionInstance.Enum<>(
+                        java.util.List.of(MmmmGameOptions.MapUpdateMode.values()),
+                        com.mojang.serialization.Codec.INT.xmap(
+                                i -> MmmmGameOptions.MapUpdateMode.values()[i],
+                                Enum::ordinal
+                        )
+                ),
+                OPTIONS_STORAGE.getData().generalOptions.getMapUpdates(),
+                value -> OPTIONS_STORAGE.getData().generalOptions.setMapUpdates(value)
+        );
+
+        OptionInstance<Integer> depthBias = new OptionInstance<>(
+                "entry.mapmipmapmod.depth_bias",
+                OptionInstance.cachedConstantTooltip(Component.translatable("tooltip.mapmipmapmod.depth_bias")),
+                (optionText, value) -> Component.translatable("entry.mapmipmapmod.depth_bias")
+                        .append(": ")
+                        .append(Component.literal(String.valueOf(value))),
+                new OptionInstance.IntRange(0, 8),
+                OPTIONS_STORAGE.getData().generalOptions.getDepthBias(),
+                value -> OPTIONS_STORAGE.getData().generalOptions.setDepthBias(value)
+        );
 
         // Add the configured options to the UI list
         if (this.list != null) {
             this.list.addBig(mapmipmapLevels);
-            this.list.addBig(lockedMapUpdates);
+            this.list.addBig(mapUpdates);
+            this.list.addBig(depthBias);
         }
     }
 

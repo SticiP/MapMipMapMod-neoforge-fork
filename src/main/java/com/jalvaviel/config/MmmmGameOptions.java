@@ -94,12 +94,17 @@ public class MmmmGameOptions {
         this.readOnly = true;
     }
 
+    public enum MapUpdateMode {
+        ALL, ONLY_UNLOCKED, NONE
+    }
+
     /**
      * Inner class holding the actual settings values.
      */
     public static class GeneralOptions {
         private int mapmipmapLevels = -1;
-        private boolean lockedMapUpdates = true;
+        private MapUpdateMode mapUpdates = MapUpdateMode.ONLY_UNLOCKED;
+        private int depthBias = 0;
 
         public GeneralOptions() {}
 
@@ -121,16 +126,16 @@ public class MmmmGameOptions {
             return this.mapmipmapLevels;
         }
 
-        public boolean isLockedMapUpdates() {
-            return this.lockedMapUpdates;
-        }
+        public MapUpdateMode getMapUpdates() { return this.mapUpdates; }
+
+        public int getDepthBias() { return this.depthBias; }
 
         public void setMapmipmapLevels(int mapmipmapLevels) {
             this.mapmipmapLevels = mapmipmapLevels;
         }
 
-        public void setLockedMapUpdates(boolean lockedMapUpdates) {
-            this.lockedMapUpdates = lockedMapUpdates;
-        }
+        public void setMapUpdates(MapUpdateMode mapUpdates) { this.mapUpdates = mapUpdates; }
+
+        public void setDepthBias(int depthBias) { this.depthBias = depthBias; }
     }
 }
