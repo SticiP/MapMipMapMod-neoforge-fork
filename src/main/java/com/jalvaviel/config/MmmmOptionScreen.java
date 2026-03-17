@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 
 public class MmmmOptionScreen extends OptionsSubScreen {
 
-    private static final MmmmOptionsStorage mmmmOpts = new MmmmOptionsStorage();
+    private static final MmmmOptionsStorage OPTIONS_STORAGE = new MmmmOptionsStorage();
 
     public MmmmOptionScreen(Screen parent, Options gameOptions) {
         super(parent, gameOptions, Component.translatable("tab.mapmipmapmod.general"));
@@ -18,7 +18,7 @@ public class MmmmOptionScreen extends OptionsSubScreen {
 
     @Override
     protected void addOptions() {
-        // Setare Mipmap Levels
+        // MipMap Levels Setting (-1 for Auto, 0-8 for manual)
         OptionInstance<Integer> mapmipmapLevels = new OptionInstance<>(
                 "entry.mapmipmapmod.map_mipmap_levels",
                 OptionInstance.cachedConstantTooltip(Component.translatable("tooltip.mapmipmapmod.map_mipmap_levels")),
@@ -26,26 +26,31 @@ public class MmmmOptionScreen extends OptionsSubScreen {
                     Component textValue = value <= -1 ?
                             Component.translatable("entry.mapmipmapmod.auto") :
                             Component.literal(Integer.toString(value));
-                    return Component.translatable("entry.mapmipmapmod.map_mipmap_levels").append(Component.literal(": ")).append(textValue);
+                    return Component.translatable("entry.mapmipmapmod.map_mipmap_levels")
+                            .append(Component.literal(": "))
+                            .append(textValue);
                 },
                 new OptionInstance.IntRange(-1, 8),
-                mmmmOpts.getData().generalOptions.getLiteralMapmipmapLevels(),
+                OPTIONS_STORAGE.getData().generalOptions.getLiteralMapmipmapLevels(),
                 (value) -> {
-                    mmmmOpts.getData().generalOptions.setMapmipmapLevels(value);
-                    MapMipMapModClient.LOG.info("Setare MipMap modificata la: " + value); // LOG AICI
+                    OPTIONS_STORAGE.getData().generalOptions.setMapmipmapLevels(value);
+                    MapMipMapModClient.LOG.info("MipMap setting changed to: " + value);
+
+                    // Safely reset map data to apply changes instantly
                     Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
                 });
 
-        // Setare Locked Maps
+        // Locked Map Updates Setting (Boolean Toggle)
         OptionInstance<Boolean> lockedMapUpdates = OptionInstance.createBoolean(
                 "entry.mapmipmapmod.locked_map_updates",
                 OptionInstance.cachedConstantTooltip(Component.translatable("tooltip.mapmipmapmod.locked_map_updates")),
-                mmmmOpts.getData().generalOptions.isLockedMapUpdates(),
+                OPTIONS_STORAGE.getData().generalOptions.isLockedMapUpdates(),
                 (value) -> {
-                    mmmmOpts.getData().generalOptions.setLockedMapUpdates(value);
-                    MapMipMapModClient.LOG.info("Actualizari harti blocate setat pe: " + value); // LOG AICI
+                    OPTIONS_STORAGE.getData().generalOptions.setLockedMapUpdates(value);
+                    MapMipMapModClient.LOG.info("Locked map updates set to: " + value);
                 });
 
+        // Add the configured options to the UI list
         if (this.list != null) {
             this.list.addBig(mapmipmapLevels);
             this.list.addBig(lockedMapUpdates);
@@ -54,9 +59,12 @@ public class MmmmOptionScreen extends OptionsSubScreen {
 
     @Override
     public void onClose() {
-        mmmmOpts.save();
-        MapMipMapModClient.LOG.info("Meniu inchis. Setarile au fost salvate."); // LOG AICI
+        OPTIONS_STORAGE.save();
+        MapMipMapModClient.LOG.info("Menu closed. Settings saved.");
+
+        // Safely reset map data upon closing the menu
         Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
+
         super.onClose();
     }
 }

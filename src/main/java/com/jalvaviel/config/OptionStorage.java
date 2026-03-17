@@ -1,8 +1,9 @@
 package com.jalvaviel.config;
 
 /**
- * This interface is just a copy-paste from the sodium interface of the same name for consistency between screen builders.
- * @param <T> Generic for the class of the config.
+ * A generic storage interface that mirrors the structure used by Sodium.
+ * This ensures consistency and compatibility between different config screen builders.
+ * * @param <T> The configuration class type being stored.
  */
 public interface OptionStorage<T> {
     T getData();

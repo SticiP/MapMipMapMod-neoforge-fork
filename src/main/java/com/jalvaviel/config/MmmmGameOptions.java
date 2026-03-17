@@ -3,9 +3,11 @@ package com.jalvaviel.config;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.jalvaviel.MapMipMapModClient;
 import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,17 +15,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import net.neoforged.fml.loading.FMLPaths;
-
-import static com.jalvaviel.MapMipMapModClient.*;
-
 public class MmmmGameOptions {
     private static final String DEFAULT_FILE_NAME = "mapmipmapmod-options.json";
 
-    public final GeneralOptions generalOptions = new GeneralOptions();
+    // GSON configured to write variables like "mapmipmapLevels" as "mapmipmap_levels" in the JSON
+    private static final Gson GSON = new GsonBuilder()
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .setPrettyPrinting()
+            .create();
 
+    public final GeneralOptions generalOptions = new GeneralOptions();
     private boolean readOnly;
-    private static final Gson GSON;
 
     private MmmmGameOptions() {}
 
@@ -32,22 +34,27 @@ public class MmmmGameOptions {
         return new MmmmGameOptions();
     }
 
+    /**
+     * Loads the configuration from the disk. If it doesn't exist, it creates a new one.
+     */
     public static MmmmGameOptions loadFromDisk() {
         Path path = FMLPaths.CONFIGDIR.get().resolve(DEFAULT_FILE_NAME);
         MmmmGameOptions config;
+
         if (Files.exists(path)) {
             try (FileReader reader = new FileReader(path.toFile())) {
                 config = GSON.fromJson(reader, MmmmGameOptions.class);
-                LOG.info("Configuratia a fost incarcata cu succes de pe disc.");
+                MapMipMapModClient.LOG.info("Configuration successfully loaded from disk.");
             } catch (IOException e) {
-                LOG.error("Nu am putut citi configuratia!", e);
+                MapMipMapModClient.LOG.error("Could not read the configuration file!", e);
                 throw new RuntimeException("Could not parse config", e);
             }
         } else {
-            LOG.info("Fisierul de configuratie nu exista. Se creeaza unul nou cu setari default.");
+            MapMipMapModClient.LOG.info("Configuration file not found. Creating a new one with default settings.");
             config = new MmmmGameOptions();
         }
 
+        // Save the config back to disk to ensure any new missing fields are written
         try {
             writeToDisk(config);
             return config;
@@ -56,22 +63,27 @@ public class MmmmGameOptions {
         }
     }
 
+    /**
+     * Safely writes the configuration to the disk using a temporary file.
+     */
     public static void writeToDisk(@NotNull MmmmGameOptions config) throws IOException {
         if (config.isReadOnly()) {
             throw new IllegalStateException("Config file is read-only");
-        } else {
-            Path path = FMLPaths.CONFIGDIR.get().resolve(DEFAULT_FILE_NAME);
-            Path dir = path.getParent();
-            if (!Files.exists(dir)) {
-                Files.createDirectories(dir);
-            } else if (!Files.isDirectory(dir)) {
-                throw new IOException("Not a directory: " + dir);
-            }
-
-            Path tempPath = path.resolveSibling(path.getFileName() + ".tmp");
-            Files.writeString(tempPath, GSON.toJson(config));
-            Files.move(tempPath, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         }
+
+        Path path = FMLPaths.CONFIGDIR.get().resolve(DEFAULT_FILE_NAME);
+        Path dir = path.getParent();
+
+        if (!Files.exists(dir)) {
+            Files.createDirectories(dir);
+        } else if (!Files.isDirectory(dir)) {
+            throw new IOException("Not a directory: " + dir);
+        }
+
+        // Write to a temporary file first, then move it to prevent corruption on crash
+        Path tempPath = path.resolveSibling(path.getFileName() + ".tmp");
+        Files.writeString(tempPath, GSON.toJson(config));
+        Files.move(tempPath, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     }
 
     public boolean isReadOnly() {
@@ -82,20 +94,29 @@ public class MmmmGameOptions {
         this.readOnly = true;
     }
 
-    static {
-        GSON = (new GsonBuilder()).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setPrettyPrinting().create();
-    }
-
+    /**
+     * Inner class holding the actual settings values.
+     */
     public static class GeneralOptions {
         private int mapmipmapLevels = -1;
         private boolean lockedMapUpdates = true;
 
         public GeneralOptions() {}
 
+        /**
+         * Returns the effective MipMap level based on user settings and driver support.
+         * If set to -1 (Auto), it falls back to the game's default MipMap level.
+         */
         public int getMapmipmapLevels() {
-            return OUTDATED_DRIVER ? 0 : (this.mapmipmapLevels <= -1 ? Minecraft.getInstance().options.mipmapLevels().get() : this.mapmipmapLevels);
+            if (MapMipMapModClient.OUTDATED_DRIVER) {
+                return 0;
+            }
+            return (this.mapmipmapLevels <= -1) ? Minecraft.getInstance().options.mipmapLevels().get() : this.mapmipmapLevels;
         }
 
+        /**
+         * Returns the literal value selected by the user in the config (-1 to 8).
+         */
         public int getLiteralMapmipmapLevels() {
             return this.mapmipmapLevels;
         }

@@ -13,39 +13,43 @@ import net.minecraft.network.chat.Component;
 
 public class MapMipMapSodiumPage {
 
-    // Storage fals - noi salvam datele direct cand modificam controlul
+    /**
+     * Dummy storage for Sodium.
+     * Since we handle data via our own config system, this serves as a bridge.
+     */
     private static final SodiumOptionsStorage DUMMY_STORAGE = new SodiumOptionsStorage() {
         @Override
-        public void save() { }
+        public void save() {
+            // Configuration is saved directly during binding.
+        }
     };
 
     public static OptionPage createPage() {
-
-        // 1. Optiunea pentru MipMap Levels (-1 la 8)
+        // 1. MipMap Levels Option (-1 to 8)
         var mipmapOption = OptionImpl.createBuilder(Integer.class, DUMMY_STORAGE)
                 .setName(Component.translatable("entry.mapmipmapmod.map_mipmap_levels"))
                 .setTooltip(Component.translatable("tooltip.mapmipmapmod.map_mipmap_levels"))
                 .setControl(option -> new SliderControl(option, -1, 8, 1, value -> {
-                    // Daca valoarea este -1, returnam textul "Auto", altfel returnam numarul
                     if (value <= -1) {
                         return Component.nullToEmpty(Component.translatable("entry.mapmipmapmod.auto").getString());
                     }
                     return Component.nullToEmpty(String.valueOf(value));
                 }))
                 .setBinding(
-                        // La modificare: salvam valoarea si resetam harta (exact ca in meniul tau original)
                         (options, value) -> {
                             MapMipMapModClient.options().generalOptions.setMapmipmapLevels(value);
-                            MapMipMapModClient.LOG.info("Setare MipMap modificata la: " + value);
+                            MapMipMapModClient.LOG.info("Map MipMap level changed to: {}", value);
 
-                            Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
+                            // Safely reset map data to apply changes instantly
+                            if (Minecraft.getInstance().gameRenderer != null && Minecraft.getInstance().gameRenderer.getMapRenderer() != null) {
+                                Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();
+                            }
                         },
-                        // La citire: luam valoarea curenta
                         (options) -> MapMipMapModClient.options().generalOptions.getLiteralMapmipmapLevels()
                 )
                 .build();
 
-        // 2. Optiunea pentru Locked Map Updates (Bifa / Toggle)
+        // 2. Locked Map Updates Option (Boolean Toggle)
         var lockedMapUpdatesOption = OptionImpl.createBuilder(Boolean.class, DUMMY_STORAGE)
                 .setName(Component.translatable("entry.mapmipmapmod.locked_map_updates"))
                 .setTooltip(Component.translatable("tooltip.mapmipmapmod.locked_map_updates"))
@@ -53,19 +57,17 @@ public class MapMipMapSodiumPage {
                 .setBinding(
                         (options, value) -> {
                             MapMipMapModClient.options().generalOptions.setLockedMapUpdates(value);
-                            MapMipMapModClient.LOG.info("Actualizari harti blocate setat pe: " + value);
+                            MapMipMapModClient.LOG.info("Locked map updates set to: {}", value);
                         },
                         (options) -> MapMipMapModClient.options().generalOptions.isLockedMapUpdates()
                 )
                 .build();
 
-        // Adaugam ambele optiuni in acelasi grup vizual
         var group = OptionGroup.createBuilder()
                 .add(mipmapOption)
                 .add(lockedMapUpdatesOption)
                 .build();
 
-        // Cream tab-ul folosind titlul tradus
         return new OptionPage(Component.translatable("tab.mapmipmapmod.general"), ImmutableList.of(group));
     }
 }

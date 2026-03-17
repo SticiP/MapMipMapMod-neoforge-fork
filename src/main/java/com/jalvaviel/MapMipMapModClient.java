@@ -1,6 +1,8 @@
 package com.jalvaviel;
 
 import com.jalvaviel.config.MmmmGameOptions;
+import com.jalvaviel.config.MmmmOptionScreen;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -9,32 +11,31 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-// Adnotarea @Mod spune NeoForge-ului că acesta este punctul de intrare.
-// "mapmipmapmod" trebuie să fie identic cu cel din neoforge.mods.toml
+// The @Mod annotation tells NeoForge that this is the entry point.
+// The value "mapmipmapmod" must match the modId in the neoforge.mods.toml file.
 @Mod(value = "mapmipmapmod", dist = Dist.CLIENT)
 public class MapMipMapModClient {
 	public static final Logger LOG = LogManager.getLogger("MapMipMapMod");
 
-	private static MmmmGameOptions CONFIG;
+	private static MmmmGameOptions config;
 	public static boolean OUTDATED_DRIVER = false;
-	public static int MAP_SIZE = 128;
+	public static final int MAP_SIZE = 128;
 
 	public MapMipMapModClient(IEventBus modEventBus, ModContainer modContainer) {
-		// 1. Încărcăm configurația
-		CONFIG = loadConfig();
+		// 1. Load the configuration
+		config = loadConfig();
 
-		// 2. Spunem NeoForge-ului ce ecran să deschidă
+		// 2. Register the configuration screen factory
 		modContainer.registerExtensionPoint(IConfigScreenFactory.class,
-				(container, parentScreen) -> new com.jalvaviel.config.MmmmOptionScreen(parentScreen, net.minecraft.client.Minecraft.getInstance().options)
+				(container, parentScreen) -> new MmmmOptionScreen(parentScreen, Minecraft.getInstance().options)
 		);
 	}
 
 	public static MmmmGameOptions options() {
-		if (CONFIG == null) {
+		if (config == null) {
 			throw new IllegalStateException("Config not yet available.");
-		} else {
-			return CONFIG;
 		}
+		return config;
 	}
 
 	private static MmmmGameOptions loadConfig() {
@@ -43,9 +44,10 @@ public class MapMipMapModClient {
 		} catch (Exception e) {
 			LOG.error("Failed to load configuration file", e);
 			LOG.error("Using default configuration file in read-only mode");
-			MmmmGameOptions config = MmmmGameOptions.defaults();
-			config.setReadOnly();
-			return config;
+
+			MmmmGameOptions fallbackConfig = MmmmGameOptions.defaults();
+			fallbackConfig.setReadOnly();
+			return fallbackConfig;
 		}
 	}
 }
