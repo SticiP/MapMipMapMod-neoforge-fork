@@ -22,30 +22,27 @@ public abstract class DynamicTextureMixin {
     @Inject(method = "upload", at = @At("HEAD"), cancellable = true)
     private void generateMipMapsOnUpload(CallbackInfo ci) {
 
-        int mipmapValue = MapMipMapModClient.options().generalOptions.getMapmipmapLevels();
+        int mipmapValue = -1;
 
-        // Daca e setat MipMap si textura are pixeli
+        try {
+            mipmapValue = MapMipMapModClient.options().generalOptions.getMapmipmapLevels();
+        } catch(IllegalStateException e) {
+            return;
+        }
+
         if (mipmapValue > 0 && !MapMipMapModClient.OUTDATED_DRIVER && this.getPixels() != null) {
 
-            // Doar texturile de 128x128 sunt harti
             if (this.getPixels().getWidth() == 128 && this.getPixels().getHeight() == 128) {
 
-                // Facem cast la AbstractTexture ca sa putem apela getId()
                 int textureId = ((AbstractTexture) (Object) this).getId();
 
                 RenderSystem.assertOnRenderThreadOrInit();
                 RenderSystem.bindTexture(textureId);
 
-                // 1. Alocam spatiu si incarcam textura originala
                 TextureUtil.prepareImage(textureId, mipmapValue, 128, 128);
-
-                // Ultimul parametru trebuie sa fie FALSE (sa nu elibereze memoria imaginii)
                 this.getPixels().upload(0, 0, 0, 0, 0, 128, 128, false, false, false, false);
-
-                // 2. Generam restul nivelurilor de mipmap pe GPU
                 GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
 
-                // 3. Oprim metoda Vanilla sa mai faca upload
                 ci.cancel();
             }
         }

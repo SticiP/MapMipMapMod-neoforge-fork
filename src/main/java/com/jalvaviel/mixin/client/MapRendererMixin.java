@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(MapRenderer.MapInstance.class)
-public abstract class MapRendererMixin { // <-- Am corectat numele aici!
+public abstract class MapRendererMixin {
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderType;text(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/RenderType;"))
     private RenderType redirectMapRenderType(ResourceLocation location) {
@@ -21,7 +21,7 @@ public abstract class MapRendererMixin { // <-- Am corectat numele aici!
             return RenderType.text(location);
         }
 
-        MapMipMapModClient.LOG.info(">>> Aplicam Filtrare Biliniara (Blur) pe Harta: " + location.toString() + " <<<");
+//        MapMipMapModClient.LOG.info(">>> Applying Bilinear Filtering to the Map <<<");
 
         return RenderType.create(
                 "map_mipmap_layer",
