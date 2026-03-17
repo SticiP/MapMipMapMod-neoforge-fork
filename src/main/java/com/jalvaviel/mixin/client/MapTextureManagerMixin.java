@@ -1,42 +1,44 @@
 package com.jalvaviel.mixin.client;
 
-import net.minecraft.client.render.*;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Util;
+import com.jalvaviel.MapMipMapModClient;
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.platform.TextureUtil;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import org.lwjgl.opengl.GL30;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
-import java.util.function.Function;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import static net.minecraft.client.render.RenderPhase.*;
+@Mixin(targets = "net.minecraft.client.gui.MapRenderer$MapInstance", priority = 1200)
+public abstract class MapTextureManagerMixin {
 
-@Mixin(value = MapRenderer.MapTexture.class, priority = 1200)
-public class MapTextureManagerMixin {
-    /**
-     * Mipmap shader for maps. Just a copy of the default one for maps with mipmaps enabled.
-     */
-    @Unique
-    private static final Function<Identifier, RenderLayer> MAP_MIPMAP_LAYER = Util.memoize(texture -> RenderLayer.of("map_mipmap_layer",
-            VertexFormats.POSITION_COLOR_TEXTURE_LIGHT,
-            VertexFormat.DrawMode.QUADS,
-            786432,
-            false,
-            true,
-            RenderLayer.MultiPhaseParameters.builder()
-                    .program(TEXT_PROGRAM)
-                    .texture(new RenderPhase.Texture(texture, false,true))
-                    .transparency(TRANSLUCENT_TRANSPARENCY)
-                    .lightmap(ENABLE_LIGHTMAP)
-                    .build(true)));
+    // Shadow ne permite sa accesam campul privat "texture" din clasa MapInstance
+    @Shadow @Final private DynamicTexture texture;
 
-    /**
-     * Applies the shader function and saves it as the default renderLayer for maps.
-     * @param identifier The map atlas identifier.
-     * @return the custom renderLayer function applied and assigned.
-     */
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/RenderLayer;getText(Lnet/minecraft/util/Identifier;)Lnet/minecraft/client/render/RenderLayer;"))
-    private RenderLayer redirectRenderLayerGetText(Identifier identifier) {
-        return MAP_MIPMAP_LAYER.apply(identifier);
+    @Inject(method = "updateTexture", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/texture/DynamicTexture;upload()V"), cancellable = true)
+    private void preUploadMipmap(CallbackInfo ci) {
+        if (!MapMipMapModClient.OUTDATED_DRIVER) {
+            NativeImage image = this.texture.getPixels();
+            if (image != null) {
+                int mipmapValue = MapMipMapModClient.options().generalOptions.getMapmipmapLevels();
+
+                if (mipmapValue > 0) {
+                    // 1. Alocam memorie pentru nivelele de mipmap
+                    TextureUtil.prepareImage(this.texture.getId(), mipmapValue, image.getWidth(), image.getHeight());
+
+                    // 2. Facem upload la textura de baza (Level 0)
+                    this.texture.upload();
+
+                    // 3. Generam restul nivelelor pe GPU
+                    GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
+
+                    // 4. IMPORTANT: Anulam apelul original de upload() ca sa nu se faca de doua ori
+                    ci.cancel();
+                }
+            }
+        }
     }
 }

@@ -19,14 +19,13 @@ public class MapMipMapModClient {
 	public static boolean OUTDATED_DRIVER = false;
 	public static int MAP_SIZE = 128;
 
-	// Constructorul înlocuiește onInitializeClient() din Fabric
 	public MapMipMapModClient(IEventBus modEventBus, ModContainer modContainer) {
 		// 1. Încărcăm configurația
 		CONFIG = loadConfig();
 
-		// 2. Spunem NeoForge-ului ce ecran să deschidă când apeși pe butonul "Config" din lista de moduri
+		// 2. Spunem NeoForge-ului ce ecran să deschidă
 		modContainer.registerExtensionPoint(IConfigScreenFactory.class,
-				(minecraft, parentScreen) -> new com.jalvaviel.config.MmmmOptionScreen(parentScreen, minecraft.options)
+				(container, parentScreen) -> new com.jalvaviel.config.MmmmOptionScreen(parentScreen, net.minecraft.client.Minecraft.getInstance().options)
 		);
 	}
 
