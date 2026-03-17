@@ -1,12 +1,13 @@
 {
   "required": true,
+  "minVersion": "0.8",
   "package": "com.jalvaviel.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "client": [
     "MapRendererMixin",
-    "MapTextureManagerMixin"
+    "DynamicTextureMixin"
   ],
   "injectors": {
     "defaultRequire": 1
-	}
+  }
 }
