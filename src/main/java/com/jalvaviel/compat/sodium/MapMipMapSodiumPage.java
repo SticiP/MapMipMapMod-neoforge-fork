@@ -39,7 +39,7 @@ public class MapMipMapSodiumPage {
                 .setBinding(
                         (options, value) -> {
                             MapMipMapModClient.options().generalOptions.setMapmipmapLevels(value);
-                            MapMipMapModClient.LOG.info("Map MipMap level changed to: {}", value);
+//                            MapMipMapModClient.LOG.info("Map MipMap level changed to: {}", value);
 
                             // Safely reset map data to apply changes instantly
                             Minecraft.getInstance().gameRenderer.getMapRenderer().resetData();

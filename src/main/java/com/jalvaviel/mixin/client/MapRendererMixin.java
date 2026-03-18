@@ -41,15 +41,15 @@ public abstract class MapRendererMixin {
 
         int mipmapValue = MapMipMapModClient.options().generalOptions.getMapmipmapLevels();
 
-        MapMipMapModClient.LOG.info("[MapMipMap] redirectMapRenderType called for: {}. MipMap Level: {}, Outdated: {}",
-                location, mipmapValue, MapMipMapModClient.OUTDATED_DRIVER);
+//        MapMipMapModClient.LOG.info("[MapMipMap] redirectMapRenderType called for: {}. MipMap Level: {}, Outdated: {}",
+//                location, mipmapValue, MapMipMapModClient.OUTDATED_DRIVER);
 
         // Fallback to vanilla rendering if MipMap is disabled or drivers are unsupported
         if (mipmapValue <= 0 || MapMipMapModClient.OUTDATED_DRIVER) {
             return RenderType.text(location);
         }
 
-        MapMipMapModClient.LOG.info("[MapMipMap] >>> Applying custom Bilinear RenderType for map: {}", location);
+//        MapMipMapModClient.LOG.info("[MapMipMap] >>> Applying custom Bilinear RenderType for map: {}", location);
 
         // Create and return the custom RenderType with texture blurring (blur = true)
         return RenderType.create(
