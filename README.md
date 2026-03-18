@@ -13,8 +13,8 @@ The image on the left shows default vanilla rendering (Level 0 Mipmaps) with hea
 
 ### Siemens Star & Noise Map Art Test
 *(Replace these placeholder texts by dragging and dropping your own screenshots here)*
-![Vanilla - No Mipmap](URL_IMAGINE_FARA_MIPMAP_AICI)
-![Modded - Level 4 Mipmap](URL_IMAGINE_CU_MIPMAP_AICI)
+![Vanilla - No Mipmap](https://github.com/user-attachments/assets/f64a9d64-9823-4bcc-a66b-8e7d5e00ad0b)
+![Modded - Level 4 Mipmap](https://github.com/user-attachments/assets/dfa80f3f-d450-464e-a47b-803a92359d34)
 
 ---
 
